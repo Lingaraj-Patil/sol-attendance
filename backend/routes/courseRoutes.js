@@ -4,13 +4,17 @@ import {
   getCourses,
   getCourse,
   enrollStudent,
-  updateCourse
+  updateCourse,
+  getCoursesByCollege
 } from '../controllers/courseController.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// All routes require authentication
+// Public route - get courses by college unique ID (for registration)
+router.get('/college/:collegeUniqueId', getCoursesByCollege);
+
+// All other routes require authentication
 router.use(authenticate);
 
 // Admin only routes

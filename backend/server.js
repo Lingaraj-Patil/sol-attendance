@@ -11,6 +11,8 @@ import tokenRoutes from './routes/tokenRoutes.js';
 import courseRoutes from './routes/courseRoutes.js';
 import attendanceRoutes from './routes/attendaceRoutes.js';
 import marketplaceRoutes from './routes/marketplaceRoutes.js';
+import malsRoutes from './routes/malsRoutes.js';
+import timetableRoutes from './routes/timetableRoutes.js';
 
 // Load environment variables
 
@@ -43,6 +45,8 @@ app.use('/api/tokens', tokenRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
+app.use('/api/mals', malsRoutes);
+app.use('/api/timetables', timetableRoutes);
 
 // 404 handler
 app.use((req, res) => {

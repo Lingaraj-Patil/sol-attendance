@@ -11,7 +11,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { login, updateUser } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -24,14 +24,44 @@ const Login = () => {
     setLoading(true);
     setError('');
 
-    const result = await login(formData.email, formData.password);
-    
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
-      setError(result.message);
+    // Clear any stale auth data before attempting login
+    localStorage.removeItem('malsAdminToken');
+    localStorage.removeItem('malsAdmin');
+    localStorage.removeItem('teacherInfo');
+    localStorage.removeItem('studentInfo');
+
+    try {
+      // Use only the unified login endpoint - it handles all user types and formats
+      const result = await login(formData.email, formData.password);
+      
+      if (result.success) {
+        // Clear any old auth data first
+        localStorage.removeItem('malsAdminToken');
+        localStorage.removeItem('malsAdmin');
+        localStorage.removeItem('teacherInfo');
+        localStorage.removeItem('studentInfo');
+        
+        setLoading(false);
+        navigate('/dashboard');
+        return;
+      } else {
+        // Login returned false
+        setError(result.message || 'Invalid email/username or password. Please check your credentials.');
+        console.log('Unified login failed:', result.message);
+      }
+    } catch (loginError) {
+      // Unified login threw an error
+      const errorMessage = loginError?.response?.data?.message || 
+                          loginError?.message || 
+                          'Invalid email/username or password. Please check your credentials.';
+      setError(errorMessage);
+      console.error('Login error:', {
+        response: loginError?.response?.data,
+        message: loginError?.message,
+        status: loginError?.response?.status
+      });
     }
-    
+
     setLoading(false);
   };
 

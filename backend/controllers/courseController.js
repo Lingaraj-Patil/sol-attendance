@@ -35,11 +35,14 @@ export const createCourse = async (req, res) => {
     // Create course
     const course = await Course.create({
       name,
+      courseName: name, // Set both for compatibility
       code,
+      courseCode: code, // Set both for compatibility
       description,
       priority: priority || 1,
       tokensPerAttendance: tokensPerAttendance || 10,
-      teacher: teacherId
+      teacher: teacherId,
+      instructor: teacherId // Support both fields
     });
 
     await course.populate('teacher', 'name email');
@@ -54,6 +57,48 @@ export const createCourse = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error creating course',
+      error: error.message
+    });
+  }
+};
+
+// Get courses by college unique ID (public endpoint for registration)
+export const getCoursesByCollege = async (req, res) => {
+  try {
+    const { collegeUniqueId } = req.params;
+    
+    if (!collegeUniqueId) {
+      return res.status(400).json({
+        success: false,
+        message: 'College unique ID is required'
+      });
+    }
+
+    // Find admin with this college unique ID
+    const admin = await User.findOne({
+      'college.collegeUniqueId': collegeUniqueId,
+      role: 'admin'
+    }).populate('college.coursesOffered', 'name courseName code courseCode credits description isActive');
+
+    if (!admin || !admin.college || !admin.college.coursesOffered) {
+      return res.status(404).json({
+        success: false,
+        message: 'College not found or no courses available'
+      });
+    }
+
+    // Filter only active courses
+    const courses = admin.college.coursesOffered.filter(course => course.isActive !== false);
+
+    res.json({
+      success: true,
+      data: { courses }
+    });
+  } catch (error) {
+    console.error('Get courses by college error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching courses',
       error: error.message
     });
   }

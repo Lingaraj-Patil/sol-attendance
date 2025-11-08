@@ -23,13 +23,53 @@ export const AuthProvider = ({ children }) => {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        const response = await authAPI.getCurrentUser();
-        setUser(response.data.data.user);
+        // Try to get user from API first
+        try {
+          const response = await authAPI.getCurrentUser();
+          if (response.data?.data?.user) {
+            setUser(response.data.data.user);
+            // Update localStorage with fresh user data
+            localStorage.setItem('user', JSON.stringify(response.data.data.user));
+          }
+        } catch (apiError) {
+          // If API call fails (e.g., for MALS users or invalid token), try to load from localStorage
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            try {
+              const userData = JSON.parse(storedUser);
+              setUser(userData);
+            } catch (parseError) {
+              console.error('Error parsing stored user:', parseError);
+              // Clear invalid data
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              localStorage.removeItem('malsAdminToken');
+              localStorage.removeItem('malsAdmin');
+            }
+          } else {
+            // No stored user, token might be invalid - clear it
+            localStorage.removeItem('token');
+            localStorage.removeItem('malsAdminToken');
+            localStorage.removeItem('malsAdmin');
+          }
+        }
+      } else {
+        // No token, clear any stale user data
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          localStorage.removeItem('user');
+        }
+        localStorage.removeItem('malsAdminToken');
+        localStorage.removeItem('malsAdmin');
+        localStorage.removeItem('teacherInfo');
+        localStorage.removeItem('studentInfo');
       }
     } catch (error) {
       console.error('Load user error:', error);
+      // On error, clear potentially corrupted data
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -72,8 +112,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // Clear all authentication-related localStorage items
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('malsAdminToken');
+    localStorage.removeItem('malsAdmin');
+    localStorage.removeItem('teacherInfo');
+    localStorage.removeItem('studentInfo');
     setUser(null);
   };
 

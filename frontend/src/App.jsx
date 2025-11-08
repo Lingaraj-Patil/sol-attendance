@@ -4,6 +4,8 @@ import PrivateRoute from './components/PrivateRoute';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import RegisterInstitute from './pages/RegisterInstitute';
+import ConnectInstitute from './pages/ConnectInstitute';
 import Dashboard from './pages/Dashboard';
 import Marketplace from './pages/Marketplace';
 
@@ -16,6 +18,8 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/register-institute" element={<RegisterInstitute />} />
+            <Route path="/connect-institute" element={<ConnectInstitute />} />
             
             <Route
               path="/dashboard"

@@ -104,7 +104,7 @@ const TokenTransferForm = ({ tokens = [], onTransferSuccess }) => {
     <div className="card">
       <div className="flex items-center mb-4">
         <Send className="h-6 w-6 text-primary-600 mr-2" />
-        <h2 className="text-2xl font-semibold text-gray-900">Send Attendance Tokens</h2>
+        <h2 className="text-2xl font-semibold text-gray-900">Send Reward Tokens</h2>
       </div>
 
       {renderMessage()}

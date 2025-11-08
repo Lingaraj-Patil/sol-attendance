@@ -1,18 +1,23 @@
 import { useState, useEffect } from 'react';
-import { tokenAPI, courseAPI, marketplaceAPI } from '../services/api';
-import { Coins, BookOpen, Plus, CheckCircle, AlertCircle, History, ExternalLink, ShoppingCart } from 'lucide-react';
+import { tokenAPI, courseAPI, marketplaceAPI, timetableAPI } from '../services/api';
+import { Coins, BookOpen, Plus, CheckCircle, AlertCircle, History, ExternalLink, ShoppingCart, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import TokenTransferForm from '../components/TokenTransferForm';
+import TimetableGenerator from '../components/TimetableGenerator';
+import { malsTeacherAPI } from '../services/api';
 
 const AdminDashboard = () => {
   const [tokens, setTokens] = useState([]);
   const [courses, setCourses] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [products, setProducts] = useState([]);
+  const [timetables, setTimetables] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showTokenForm, setShowTokenForm] = useState(false);
   const [showCourseForm, setShowCourseForm] = useState(false);
   const [showProductForm, setShowProductForm] = useState(false);
+  const [showTimetableForm, setShowTimetableForm] = useState(false);
   const [message, setMessage] = useState(null);
 
   const [tokenForm, setTokenForm] = useState({
@@ -47,17 +52,21 @@ const AdminDashboard = () => {
 
   const loadData = async () => {
     try {
-      const [tokensRes, coursesRes, transactionsRes, productsRes] = await Promise.all([
+      const [tokensRes, coursesRes, transactionsRes, productsRes, timetablesRes, teachersRes] = await Promise.all([
         tokenAPI.getAll(),
         courseAPI.getAll(),
         tokenAPI.getTransactions({ limit: 50 }),
-        marketplaceAPI.getAll()
+        marketplaceAPI.getAll(),
+        timetableAPI.getAll().catch(() => ({ data: { data: { timetables: [] } } })),
+        malsTeacherAPI.getAll().catch(() => ({ data: { data: { teachers: [] } } }))
       ]);
       
       setTokens(tokensRes.data.data.tokens);
       setCourses(coursesRes.data.data.courses);
       setTransactions(transactionsRes.data.data.transactions || []);
       setProducts(productsRes.data.data.products || []);
+      setTimetables(timetablesRes.data.data.timetables || []);
+      setTeachers(teachersRes.data?.data?.teachers || teachersRes.data?.teachers || []);
     } catch (error) {
       console.error('Load data error:', error);
     } finally {
@@ -177,7 +186,7 @@ const AdminDashboard = () => {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900 flex items-center">
             <Coins className="h-6 w-6 mr-2 text-primary-600" />
-            Attendance Tokens
+            Reward Tokens
           </h2>
           <button
             onClick={() => setShowTokenForm(!showTokenForm)}
@@ -193,7 +202,7 @@ const AdminDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <input
                 type="text"
-                placeholder="Token Name"
+                placeholder="Reward Token Name (e.g., Attendance Reward, Major1 Reward)"
                 value={tokenForm.name}
                 onChange={(e) => setTokenForm({ ...tokenForm, name: e.target.value })}
                 className="input-field"
@@ -201,7 +210,7 @@ const AdminDashboard = () => {
               />
               <input
                 type="text"
-                placeholder="Symbol (e.g., ATTND)"
+                placeholder="Symbol (e.g., ATTND, MAJ1, MAJ2)"
                 value={tokenForm.symbol}
                 onChange={(e) => setTokenForm({ ...tokenForm, symbol: e.target.value.toUpperCase() })}
                 className="input-field"
@@ -232,21 +241,34 @@ const AdminDashboard = () => {
           </form>
         )}
 
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>💡 Tip:</strong> Create different reward tokens for different purposes (e.g., "Attendance Reward", "Major1 Reward", "Major2 Reward", "Major3 Reward")
+          </p>
+        </div>
+
         {tokens.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {tokens.map((token) => (
-              <div key={token._id} className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900">{token.name}</h3>
-                <p className="text-sm text-gray-600">Symbol: {token.symbol}</p>
-                <p className="text-sm text-gray-600">Total Supply: {token.totalSupply}</p>
-                <p className="text-xs text-gray-500 mt-2 font-mono truncate">
+              <div key={token._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900">{token.name}</h3>
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                    token.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {token.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600">Symbol: <span className="font-semibold">{token.symbol}</span></p>
+                <p className="text-sm text-gray-600">Total Supply: <span className="font-semibold">{token.totalSupply || 0}</span></p>
+                <p className="text-xs text-gray-500 mt-2 font-mono truncate" title={token.mintAddress}>
                   {token.mintAddress}
                 </p>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-gray-500 text-center py-4">No tokens created yet</p>
+          <p className="text-gray-500 text-center py-4">No reward tokens created yet</p>
         )}
       </div>
 
@@ -466,6 +488,149 @@ const AdminDashboard = () => {
         )}
       </div>
 
+      {/* Teachers Section */}
+      <div className="card mb-8">
+        <div className="flex items-center mb-6">
+          <BookOpen className="h-6 w-6 text-primary-600 mr-2" />
+          <h2 className="text-2xl font-semibold text-gray-900">Teachers</h2>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+            <p className="mt-2 text-gray-500">Loading teachers...</p>
+          </div>
+        ) : teachers.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {teachers.map((teacher) => (
+              <div
+                key={teacher._id || teacher.id}
+                className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                      {teacher.name || teacher.username || 'N/A'}
+                    </h3>
+                    <p className="text-sm text-gray-600">{teacher.email || 'N/A'}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 mt-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Experience:</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {teacher.experience !== undefined ? `${teacher.experience} years` : 'N/A'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Department:</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {teacher.department || 'N/A'}
+                    </span>
+                  </div>
+                  
+                  {teacher.workingHour !== undefined && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Working Hours:</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {teacher.workingHour} hours
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">No teachers found</p>
+          </div>
+        )}
+      </div>
+
+      {/* Timetables Section */}
+      <div className="card mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+            <Calendar className="h-6 w-6 mr-2 text-primary-600" />
+            Timetables
+          </h2>
+          <div className="flex space-x-2">
+            <button
+              onClick={async () => {
+                try {
+                  setLoading(true);
+                  setMessage(null);
+                  const response = await timetableAPI.autoGenerate({
+                    name: `Auto-Generated ${new Date().toLocaleDateString()}`,
+                    semester: 'Fall 2024',
+                    academicYear: '2024-2025',
+                    timeLimit: 30
+                  });
+                  if (response.data.success) {
+                    setMessage({ type: 'success', text: 'Timetable auto-generated from user availability!' });
+                    await loadData();
+                  }
+                } catch (error) {
+                  setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to auto-generate timetable' });
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              className="btn-primary flex items-center space-x-2"
+              disabled={loading}
+            >
+              <Calendar className="h-5 w-5" />
+              <span>Auto-Generate from User Data</span>
+            </button>
+            <button
+              onClick={() => setShowTimetableForm(!showTimetableForm)}
+              className="btn-secondary flex items-center space-x-2"
+            >
+              <Plus className="h-5 w-5" />
+              <span>Manual Generate</span>
+            </button>
+          </div>
+        </div>
+
+        {showTimetableForm && (
+          <div className="mb-6">
+            <TimetableGenerator onSuccess={loadData} />
+          </div>
+        )}
+
+        {timetables.length > 0 ? (
+          <div className="space-y-4">
+            {timetables.map((timetable) => (
+              <div key={timetable._id} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900">{timetable.name}</h3>
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                    timetable.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {timetable.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                {timetable.semester && (
+                  <p className="text-sm text-gray-600">Semester: {timetable.semester}</p>
+                )}
+                {timetable.academicYear && (
+                  <p className="text-sm text-gray-600">Academic Year: {timetable.academicYear}</p>
+                )}
+                <p className="text-xs text-gray-500 mt-2">
+                  Created: {format(new Date(timetable.createdAt), 'PPP')}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500 text-center py-4">No timetables generated yet</p>
+        )}
+      </div>
+
       {/* Courses Section */}
       <div className="card">
         <div className="flex justify-between items-center mb-6">
@@ -520,7 +685,7 @@ const AdminDashboard = () => {
               />
               <input
                 type="number"
-                placeholder="Tokens Per Attendance"
+                placeholder="Reward Tokens Per Attendance"
                 value={courseForm.tokensPerAttendance}
                 onChange={(e) => setCourseForm({ ...courseForm, tokensPerAttendance: parseInt(e.target.value) })}
                 className="input-field"
