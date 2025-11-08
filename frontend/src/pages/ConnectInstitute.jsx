@@ -348,7 +348,7 @@ const ConnectInstitute = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-yellow-50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen flex bg-gradient-to-br from-gray-50 via-white to-yellow-50 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-64 h-64 bg-yellow-200 rounded-full opacity-20 blur-3xl"></div>
@@ -358,370 +358,412 @@ const ConnectInstitute = () => {
       {/* Top accent bar */}
       <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600"></div>
 
-      <div className="max-w-2xl w-full space-y-8 relative z-10">
-        <div className="text-center">
-          <div className="flex justify-center">
-            <div className="relative">
-              <Building2 className="h-12 w-12 text-yellow-600" />
-              <div className="absolute -inset-1 bg-yellow-400 rounded-full opacity-20 blur-lg"></div>
-            </div>
-          </div>
-          <h2 className="mt-6 text-3xl font-serif font-extrabold text-gray-900">
-            Connect with Your Institute
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Complete your {userType} registration by connecting to your college
-          </p>
-        </div>
-
-        <form
-          className="mt-8 space-y-6 bg-white/80 backdrop-blur-sm p-8 rounded-lg shadow-xl border-2 border-yellow-200"
-          onSubmit={
-            userType === "teacher" ? handleTeacherSubmit : handleStudentSubmit
-          }
-        >
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2 text-red-800">
-              <AlertCircle className="h-5 w-5" />
-              <span className="text-sm">{error}</span>
-            </div>
-          )}
-
-          {message && (
-            <div
-              className={`border rounded-lg p-4 flex items-center space-x-2 ${
-                message.type === "success"
-                  ? "bg-green-50 border-green-200 text-green-800"
-                  : "bg-red-50 border-red-200 text-red-800"
-              }`}
-            >
-              {message.type === "success" ? (
-                <CheckCircle className="h-5 w-5" />
-              ) : (
-                <AlertCircle className="h-5 w-5" />
-              )}
-              <span className="text-sm">{message.text}</span>
-            </div>
-          )}
-
-          {/* College Unique ID - Common for both */}
-          <div>
-            <label
-              htmlFor="collegeUniqueId"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              College Unique ID *
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Building2 className="h-5 w-5 text-gray-400" />
+      {/* Left Branding Section */}
+      <div className="flex-1 flex items-center justify-center p-8 relative z-10">
+        <div className="max-w-md w-full text-center">
+          {/* Animated Logo */}
+          <div className="relative mb-12">
+            <div className="flex justify-center mb-8">
+              <div className="relative">
+                <Building2 className="h-24 w-24 text-yellow-600" />
+                <div className="absolute -inset-2 bg-yellow-400 rounded-full opacity-20 blur-lg animate-pulse"></div>
               </div>
-              <input
-                id="collegeUniqueId"
-                name="collegeUniqueId"
-                type="text"
-                required
-                value={
-                  userType === "teacher"
-                    ? teacherFormData.collegeUniqueId
-                    : studentFormData.collegeUniqueId
-                }
-                onChange={
-                  userType === "teacher"
-                    ? handleTeacherChange
-                    : handleStudentChange
-                }
-                className="input-field pl-10 w-full"
-                placeholder="Enter your college unique ID"
-              />
             </div>
-            <p className="mt-1 text-xs text-gray-500">
-              Get this ID from your college administrator
-            </p>
           </div>
 
-          {/* Teacher-specific fields */}
-          {userType === "teacher" && (
-            <>
-              <div>
-                <label
-                  htmlFor="experience"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Years of Experience *
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Briefcase className="h-5 w-5 text-gray-400" />
+          {/* Main Heading */}
+          <h1 className="text-4xl md:text-5xl font-serif font-extrabold text-gray-900 mb-6 leading-tight">
+            Connect with Your
+            <span className="bg-gradient-to-r from-yellow-600 to-yellow-700 bg-clip-text text-transparent block">
+              Institute
+            </span>
+          </h1>
+
+          {/* Description */}
+          <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+            Complete your {userType} registration by connecting to your college
+            and unlock your academic journey
+          </p>
+
+          {/* Features */}
+          <div className="space-y-4 text-left">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                <Building2 className="h-4 w-4 text-yellow-600" />
+              </div>
+              <span className="text-gray-700">Secure Institute Connection</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                <GraduationCap className="h-4 w-4 text-yellow-600" />
+              </div>
+              <span className="text-gray-700">Course Registration</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="h-4 w-4 text-yellow-600" />
+              </div>
+              <span className="text-gray-700">Instant Access</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Gradient Divider */}
+      <div className="w-px bg-gradient-to-b from-transparent via-yellow-300 to-transparent"></div>
+
+      {/* Right Form Section */}
+      <div className="flex-1 flex items-center justify-center p-8 relative z-10">
+        <div className="max-w-md w-full">
+          <form
+            className="space-y-6 bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-yellow-200"
+            onSubmit={
+              userType === "teacher" ? handleTeacherSubmit : handleStudentSubmit
+            }
+          >
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2 text-red-800">
+                <AlertCircle className="h-5 w-5" />
+                <span className="text-sm">{error}</span>
+              </div>
+            )}
+
+            {message && (
+              <div
+                className={`border rounded-lg p-4 flex items-center space-x-2 ${
+                  message.type === "success"
+                    ? "bg-green-50 border-green-200 text-green-800"
+                    : "bg-red-50 border-red-200 text-red-800"
+                }`}
+              >
+                {message.type === "success" ? (
+                  <CheckCircle className="h-5 w-5" />
+                ) : (
+                  <AlertCircle className="h-5 w-5" />
+                )}
+                <span className="text-sm">{message.text}</span>
+              </div>
+            )}
+
+            {/* College Unique ID - Common for both */}
+            <div>
+              <label
+                htmlFor="collegeUniqueId"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                College Unique ID *
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Building2 className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="collegeUniqueId"
+                  name="collegeUniqueId"
+                  type="text"
+                  required
+                  value={
+                    userType === "teacher"
+                      ? teacherFormData.collegeUniqueId
+                      : studentFormData.collegeUniqueId
+                  }
+                  onChange={
+                    userType === "teacher"
+                      ? handleTeacherChange
+                      : handleStudentChange
+                  }
+                  className="w-full pl-12 pr-4 py-4 border-2 border-yellow-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 transition-all duration-300 text-gray-800 placeholder-gray-500 bg-white/90 backdrop-blur-sm shadow-sm hover:shadow-md"
+                  placeholder="Enter your college unique ID"
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Get this ID from your college administrator
+              </p>
+            </div>
+
+            {/* Teacher-specific fields */}
+            {userType === "teacher" && (
+              <>
+                <div>
+                  <label
+                    htmlFor="experience"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Years of Experience *
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Briefcase className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="experience"
+                      name="experience"
+                      type="number"
+                      required
+                      min="0"
+                      value={teacherFormData.experience}
+                      onChange={handleTeacherChange}
+                      className="w-full pl-12 pr-4 py-4 border-2 border-yellow-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 transition-all duration-300 text-gray-800 placeholder-gray-500 bg-white/90 backdrop-blur-sm shadow-sm hover:shadow-md"
+                      placeholder="e.g., 5"
+                    />
                   </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="department"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Department *
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <GraduationCap className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="department"
+                      name="department"
+                      type="text"
+                      required
+                      value={teacherFormData.department}
+                      onChange={handleTeacherChange}
+                      className="w-full pl-12 pr-4 py-4 border-2 border-yellow-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 transition-all duration-300 text-gray-800 placeholder-gray-500 bg-white/90 backdrop-blur-sm shadow-sm hover:shadow-md"
+                      placeholder="e.g., Computer Science"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="workingHour"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Working Hours per Week *
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Clock className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="workingHour"
+                      name="workingHour"
+                      type="number"
+                      required
+                      min="1"
+                      value={teacherFormData.workingHour}
+                      onChange={handleTeacherChange}
+                      className="w-full pl-12 pr-4 py-4 border-2 border-yellow-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 transition-all duration-300 text-gray-800 placeholder-gray-500 bg-white/90 backdrop-blur-sm shadow-sm hover:shadow-md"
+                      placeholder="e.g., 40"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Student-specific fields */}
+            {userType === "student" && (
+              <>
+                <div>
+                  <label
+                    htmlFor="age"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Age *
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <User className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="age"
+                      name="age"
+                      type="number"
+                      required
+                      min="1"
+                      value={studentFormData.age}
+                      onChange={handleStudentChange}
+                      className="w-full pl-12 pr-4 py-4 border-2 border-yellow-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 transition-all duration-300 text-gray-800 placeholder-gray-500 bg-white/90 backdrop-blur-sm shadow-sm hover:shadow-md"
+                      placeholder="e.g., 20"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="gender"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Gender *
+                  </label>
+                  <select
+                    id="gender"
+                    name="gender"
+                    required
+                    value={studentFormData.gender}
+                    onChange={handleStudentChange}
+                    className="w-full px-4 py-4 border-2 border-yellow-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 transition-all duration-300 text-gray-800 bg-white/90 backdrop-blur-sm shadow-sm hover:shadow-md"
+                  >
+                    <option value="">Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="Program"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Program *
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <BookOpen className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="Program"
+                      name="Program"
+                      type="text"
+                      required
+                      value={studentFormData.Program}
+                      onChange={handleStudentChange}
+                      className="w-full pl-12 pr-4 py-4 border-2 border-yellow-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 transition-all duration-300 text-gray-800 placeholder-gray-500 bg-white/90 backdrop-blur-sm shadow-sm hover:shadow-md"
+                      placeholder="e.g., Computer Science"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="maxCourses"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Number of Courses to Select *
+                  </label>
                   <input
-                    id="experience"
-                    name="experience"
+                    id="maxCourses"
+                    name="maxCourses"
                     type="number"
                     required
-                    min="0"
-                    value={teacherFormData.experience}
-                    onChange={handleTeacherChange}
-                    className="input-field pl-10 w-full"
+                    min="1"
+                    max="10"
+                    value={studentFormData.maxCourses}
+                    onChange={handleStudentChange}
+                    className="w-full px-4 py-4 border-2 border-yellow-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 transition-all duration-300 text-gray-800 placeholder-gray-500 bg-white/90 backdrop-blur-sm shadow-sm hover:shadow-md"
                     placeholder="e.g., 5"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Select how many courses you want to enroll in
+                  </p>
                 </div>
-              </div>
 
-              <div>
-                <label
-                  htmlFor="department"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Department *
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <GraduationCap className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="department"
-                    name="department"
-                    type="text"
-                    required
-                    value={teacherFormData.department}
-                    onChange={handleTeacherChange}
-                    className="input-field pl-10 w-full"
-                    placeholder="e.g., Computer Science"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="workingHour"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Working Hours per Week *
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Clock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="workingHour"
-                    name="workingHour"
-                    type="number"
-                    required
-                    min="1"
-                    value={teacherFormData.workingHour}
-                    onChange={handleTeacherChange}
-                    className="input-field pl-10 w-full"
-                    placeholder="e.g., 40"
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Student-specific fields */}
-          {userType === "student" && (
-            <>
-              <div>
-                <label
-                  htmlFor="age"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Age *
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="age"
-                    name="age"
-                    type="number"
-                    required
-                    min="1"
-                    value={studentFormData.age}
-                    onChange={handleStudentChange}
-                    className="input-field pl-10 w-full"
-                    placeholder="e.g., 20"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="gender"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Gender *
-                </label>
-                <select
-                  id="gender"
-                  name="gender"
-                  required
-                  value={studentFormData.gender}
-                  onChange={handleStudentChange}
-                  className="input-field w-full"
-                >
-                  <option value="">Select gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="Program"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Program *
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <BookOpen className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="Program"
-                    name="Program"
-                    type="text"
-                    required
-                    value={studentFormData.Program}
-                    onChange={handleStudentChange}
-                    className="input-field pl-10 w-full"
-                    placeholder="e.g., Computer Science"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="maxCourses"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Number of Courses to Select *
-                </label>
-                <input
-                  id="maxCourses"
-                  name="maxCourses"
-                  type="number"
-                  required
-                  min="1"
-                  max="10"
-                  value={studentFormData.maxCourses}
-                  onChange={handleStudentChange}
-                  className="input-field w-full"
-                  placeholder="e.g., 5"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Select how many courses you want to enroll in
-                </p>
-              </div>
-
-              {/* Dynamic Course Selection */}
-              {studentFormData.maxCourses &&
-                parseInt(studentFormData.maxCourses) > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Your Courses *
-                    </label>
-                    {loadingCourses ? (
-                      <div className="text-center py-4">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mx-auto"></div>
-                        <p className="text-sm text-gray-500 mt-2">
-                          Loading courses...
-                        </p>
-                      </div>
-                    ) : availableCourses.length === 0 ? (
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <p className="text-sm text-yellow-800">
-                          No courses available. Please enter a valid College
-                          Unique ID or contact your administrator.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {Array.from({
-                          length: parseInt(studentFormData.maxCourses) || 0,
-                        }).map((_, index) => (
-                          <div key={index}>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Course {index + 1} *
-                            </label>
-                            <select
-                              value={
-                                studentFormData.selectedCourses[index] || ""
-                              }
-                              onChange={(e) =>
-                                handleCourseSelection(index, e.target.value)
-                              }
-                              className="input-field w-full"
-                              required
-                            >
-                              <option value="">Select a course</option>
-                              {availableCourses.map((course) => {
-                                const courseId = course._id || course.id;
-                                const isAlreadySelected =
-                                  studentFormData.selectedCourses.some(
-                                    (selected, idx) =>
-                                      selected === courseId && idx !== index
+                {/* Dynamic Course Selection */}
+                {studentFormData.maxCourses &&
+                  parseInt(studentFormData.maxCourses) > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Your Courses *
+                      </label>
+                      {loadingCourses ? (
+                        <div className="text-center py-4">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mx-auto"></div>
+                          <p className="text-sm text-gray-500 mt-2">
+                            Loading courses...
+                          </p>
+                        </div>
+                      ) : availableCourses.length === 0 ? (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                          <p className="text-sm text-yellow-800">
+                            No courses available. Please enter a valid College
+                            Unique ID or contact your administrator.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {Array.from({
+                            length: parseInt(studentFormData.maxCourses) || 0,
+                          }).map((_, index) => (
+                            <div key={index}>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Course {index + 1} *
+                              </label>
+                              <select
+                                value={
+                                  studentFormData.selectedCourses[index] || ""
+                                }
+                                onChange={(e) =>
+                                  handleCourseSelection(index, e.target.value)
+                                }
+                                className="w-full px-4 py-4 border-2 border-yellow-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 transition-all duration-300 text-gray-800 bg-white/90 backdrop-blur-sm shadow-sm hover:shadow-md"
+                                required
+                              >
+                                <option value="">Select a course</option>
+                                {availableCourses.map((course) => {
+                                  const courseId = course._id || course.id;
+                                  const isAlreadySelected =
+                                    studentFormData.selectedCourses.some(
+                                      (selected, idx) =>
+                                        selected === courseId && idx !== index
+                                    );
+                                  return (
+                                    <option
+                                      key={courseId}
+                                      value={courseId}
+                                      disabled={isAlreadySelected}
+                                    >
+                                      {course.name || course.courseName} (
+                                      {course.code || course.courseCode})
+                                      {isAlreadySelected
+                                        ? " (Already selected)"
+                                        : ""}
+                                    </option>
                                   );
-                                return (
-                                  <option
-                                    key={courseId}
-                                    value={courseId}
-                                    disabled={isAlreadySelected}
-                                  >
-                                    {course.name || course.courseName} (
-                                    {course.code || course.courseCode})
-                                    {isAlreadySelected
-                                      ? " (Already selected)"
-                                      : ""}
-                                  </option>
-                                );
-                              })}
-                            </select>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-            </>
-          )}
+                                })}
+                              </select>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+              </>
+            )}
 
-          <div className="flex space-x-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 flex items-center justify-center space-x-2 px-8 py-3 bg-yellow-500 text-white font-bold rounded-lg hover:bg-yellow-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  <span>Completing Registration...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-5 w-5" />
-                  <span>Complete Registration</span>
-                </>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                localStorage.removeItem(
-                  userType === "teacher" ? "teacherInfo" : "studentInfo"
-                );
-                navigate("/register");
-              }}
-              className="btn-secondary"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+            <div className="flex space-x-4">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 flex items-center justify-center space-x-2 px-8 py-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white font-bold rounded-xl hover:from-yellow-600 hover:to-yellow-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span>Completing Registration...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-5 w-5" />
+                    <span>Complete Registration</span>
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem(
+                    userType === "teacher" ? "teacherInfo" : "studentInfo"
+                  );
+                  navigate("/register");
+                }}
+                className="px-8 py-4 border-2 border-yellow-300 text-yellow-700 font-semibold rounded-xl hover:bg-yellow-50 transition-all duration-300 shadow-sm hover:shadow-md"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
