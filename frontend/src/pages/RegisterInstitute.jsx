@@ -1,37 +1,64 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { malsAdminAPI, malsTeacherAPI } from '../services/api';
-import { Building2, Plus, X, AlertCircle, CheckCircle, GraduationCap, BookOpen } from 'lucide-react';
+import {useState, useEffect} from "react";
+import {useNavigate} from "react-router-dom";
+import {useAuth} from "../context/AuthContext";
+import {malsAdminAPI, malsTeacherAPI} from "../services/api";
+import {
+  Building2,
+  Plus,
+  X,
+  AlertCircle,
+  CheckCircle,
+  GraduationCap,
+  BookOpen,
+} from "lucide-react";
 
 const RegisterInstitute = () => {
   const [formData, setFormData] = useState({
-    collegeName: '',
-    collegeUniqueId: '',
+    collegeName: "",
+    collegeUniqueId: "",
     programsOffered: [],
     courses: [
-      { courseName: '', courseCode: '', description: '', credits: '', instructor: '' },
-      { courseName: '', courseCode: '', description: '', credits: '', instructor: '' },
-      { courseName: '', courseCode: '', description: '', credits: '', instructor: '' }
-    ]
+      {
+        courseName: "",
+        courseCode: "",
+        description: "",
+        credits: "",
+        instructor: "",
+      },
+      {
+        courseName: "",
+        courseCode: "",
+        description: "",
+        credits: "",
+        instructor: "",
+      },
+      {
+        courseName: "",
+        courseCode: "",
+        description: "",
+        credits: "",
+        instructor: "",
+      },
+    ],
   });
 
-  const [programInput, setProgramInput] = useState('');
+  const [programInput, setProgramInput] = useState("");
   const [teachers, setTeachers] = useState([]);
   const [loadingTeachers, setLoadingTeachers] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [message, setMessage] = useState(null);
   const navigate = useNavigate();
-  const { updateUser } = useAuth();
+  const {updateUser} = useAuth();
 
   useEffect(() => {
     loadTeachers();
     // Check if admin is logged in
-    const adminToken = localStorage.getItem('malsAdminToken') || localStorage.getItem('token');
-    const admin = localStorage.getItem('malsAdmin');
+    const adminToken =
+      localStorage.getItem("malsAdminToken") || localStorage.getItem("token");
+    const admin = localStorage.getItem("malsAdmin");
     if (!adminToken || !admin) {
-      navigate('/register');
+      navigate("/register");
     }
   }, [navigate]);
 
@@ -39,9 +66,9 @@ const RegisterInstitute = () => {
     try {
       setLoadingTeachers(true);
       // Get admin info to filter teachers by college (if college exists)
-      const admin = JSON.parse(localStorage.getItem('malsAdmin') || '{}');
+      const admin = JSON.parse(localStorage.getItem("malsAdmin") || "{}");
       const adminId = admin.id || admin._id;
-      
+
       // If admin has college, filter teachers by college courses
       // Otherwise, show all teachers (during initial registration)
       const response = await malsTeacherAPI.getAll(adminId);
@@ -52,10 +79,10 @@ const RegisterInstitute = () => {
         setTeachers(response.data.teachers);
       }
     } catch (error) {
-      console.error('Error loading teachers:', error);
+      console.error("Error loading teachers:", error);
       // Don't show error if it's just no teachers available
       if (error.response?.status !== 404) {
-        setError('Failed to load teachers. Please refresh the page.');
+        setError("Failed to load teachers. Please refresh the page.");
       }
     } finally {
       setLoadingTeachers(false);
@@ -68,70 +95,82 @@ const RegisterInstitute = () => {
       const updatedCourses = [...formData.courses];
       updatedCourses[index] = {
         ...updatedCourses[index],
-        [e.target.name]: e.target.value
+        [e.target.name]: e.target.value,
       };
-      setFormData({ ...formData, courses: updatedCourses });
+      setFormData({...formData, courses: updatedCourses});
     } else {
-      setFormData({ ...formData, [e.target.name]: e.target.value });
+      setFormData({...formData, [e.target.name]: e.target.value});
     }
-    setError('');
+    setError("");
   };
 
   const addProgram = () => {
-    if (programInput.trim() && !formData.programsOffered.includes(programInput.trim())) {
+    if (
+      programInput.trim() &&
+      !formData.programsOffered.includes(programInput.trim())
+    ) {
       setFormData({
         ...formData,
-        programsOffered: [...formData.programsOffered, programInput.trim()]
+        programsOffered: [...formData.programsOffered, programInput.trim()],
       });
-      setProgramInput('');
+      setProgramInput("");
     }
   };
 
   const removeProgram = (program) => {
     setFormData({
       ...formData,
-      programsOffered: formData.programsOffered.filter(p => p !== program)
+      programsOffered: formData.programsOffered.filter((p) => p !== program),
     });
   };
 
   const addCourse = () => {
     setFormData({
       ...formData,
-      courses: [...formData.courses, { courseName: '', courseCode: '', description: '', credits: '', instructor: '' }]
+      courses: [
+        ...formData.courses,
+        {
+          courseName: "",
+          courseCode: "",
+          description: "",
+          credits: "",
+          instructor: "",
+        },
+      ],
     });
   };
 
   const removeCourse = (index) => {
     if (formData.courses.length > 3) {
       const updatedCourses = formData.courses.filter((_, i) => i !== index);
-      setFormData({ ...formData, courses: updatedCourses });
+      setFormData({...formData, courses: updatedCourses});
     } else {
-      setError('Minimum 3 courses are required');
+      setError("Minimum 3 courses are required");
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
     setMessage(null);
 
     try {
       // Validate form
       if (!formData.collegeName || !formData.collegeUniqueId) {
-        setError('College name and unique ID are required');
+        setError("College name and unique ID are required");
         setLoading(false);
         return;
       }
 
       if (formData.programsOffered.length === 0) {
-        setError('At least one program must be offered');
+        setError("At least one program must be offered");
         setLoading(false);
         return;
       }
 
       if (formData.courses.length < 3) {
-        setError('Minimum 3 courses are required');
+        setError("Minimum 3 courses are required");
         setLoading(false);
         return;
       }
@@ -139,8 +178,17 @@ const RegisterInstitute = () => {
       // Validate all courses
       for (let i = 0; i < formData.courses.length; i++) {
         const course = formData.courses[i];
-        if (!course.courseName || !course.courseCode || !course.description || !course.credits) {
-          setError(`Course ${i + 1} is missing required fields (Course Name, Course Code, Description, Credits)`);
+        if (
+          !course.courseName ||
+          !course.courseCode ||
+          !course.description ||
+          !course.credits
+        ) {
+          setError(
+            `Course ${
+              i + 1
+            } is missing required fields (Course Name, Course Code, Description, Credits)`
+          );
           setLoading(false);
           return;
         }
@@ -151,7 +199,9 @@ const RegisterInstitute = () => {
         }
         // Instructor is optional, but if provided, validate it exists
         if (course.instructor) {
-          const instructorExists = teachers.find(t => t.id === course.instructor);
+          const instructorExists = teachers.find(
+            (t) => t.id === course.instructor
+          );
           if (!instructorExists) {
             setError(`Course ${i + 1} has an invalid instructor selected`);
             setLoading(false);
@@ -161,10 +211,10 @@ const RegisterInstitute = () => {
       }
 
       // Get admin info
-      const admin = JSON.parse(localStorage.getItem('malsAdmin') || '{}');
+      const admin = JSON.parse(localStorage.getItem("malsAdmin") || "{}");
       const adminId = admin.id || admin._id;
       if (!adminId) {
-        setError('Admin information not found. Please register again.');
+        setError("Admin information not found. Please register again.");
         setLoading(false);
         return;
       }
@@ -178,20 +228,26 @@ const RegisterInstitute = () => {
             courseCode: course.courseCode,
             description: course.description,
             credits: parseFloat(course.credits),
-            ...(course.instructor && { instructor: course.instructor }) // Only include if provided
+            ...(course.instructor && {instructor: course.instructor}), // Only include if provided
           };
-          
+
           const courseResponse = await malsAdminAPI.createCourse(courseData);
           // Main backend returns: { success, message, data: { course: { _id, ... } } }
-          const courseId = courseResponse.data.data?.course?._id || courseResponse.data.course?._id;
+          const courseId =
+            courseResponse.data.data?.course?._id ||
+            courseResponse.data.course?._id;
           if (courseId) {
             createdCourses.push(courseId);
           } else {
-            throw new Error('Course creation failed - no course ID returned');
+            throw new Error("Course creation failed - no course ID returned");
           }
         } catch (error) {
-          console.error('Error creating course:', error);
-          setError(`Failed to create course: ${course.courseName}. ${error.response?.data?.message || error.message}`);
+          console.error("Error creating course:", error);
+          setError(
+            `Failed to create course: ${course.courseName}. ${
+              error.response?.data?.message || error.message
+            }`
+          );
           setLoading(false);
           return;
         }
@@ -204,50 +260,72 @@ const RegisterInstitute = () => {
         coursesOffered: createdCourses,
         programsOffered: formData.programsOffered,
         classroomOccupancy: 0,
-        labOccupancy: 0
+        labOccupancy: 0,
       };
 
       // Register the college using MALS API
-      const collegeResponse = await malsAdminAPI.registerCollege(adminId, collegeData);
+      const collegeResponse = await malsAdminAPI.registerCollege(
+        adminId,
+        collegeData
+      );
 
       if (collegeResponse.data) {
         // Update AuthContext with admin data if available
-        const admin = JSON.parse(localStorage.getItem('malsAdmin') || '{}');
+        const admin = JSON.parse(localStorage.getItem("malsAdmin") || "{}");
         if (admin && Object.keys(admin).length > 0) {
           const userData = {
             id: admin.id || admin._id,
             name: admin.username || admin.name,
             email: admin.email || `${admin.username}@admin.mals`,
-            role: 'admin',
-            ...admin
+            role: "admin",
+            ...admin,
           };
-          localStorage.setItem('user', JSON.stringify(userData));
+          localStorage.setItem("user", JSON.stringify(userData));
           updateUser(userData);
         }
-        
-        setMessage({ type: 'success', text: 'Institute registered successfully! Redirecting to dashboard...' });
+
+        setMessage({
+          type: "success",
+          text: "Institute registered successfully! Redirecting to dashboard...",
+        });
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate("/dashboard");
         }, 1500);
       } else {
-        setError('Failed to register institute');
+        setError("Failed to register institute");
       }
     } catch (error) {
-      console.error('Error registering institute:', error);
-      setError(error.response?.data?.message || error.message || 'Failed to register institute');
+      console.error("Error registering institute:", error);
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to register institute"
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-yellow-50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-64 h-64 bg-yellow-200 rounded-full opacity-20 blur-3xl"></div>
+        <div className="absolute bottom-40 right-20 w-80 h-80 bg-yellow-300 rounded-full opacity-15 blur-3xl"></div>
+      </div>
+
+      {/* Top accent bar */}
+      <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600"></div>
+
+      <div className="max-w-4xl w-full space-y-8 relative z-10">
         <div className="text-center">
           <div className="flex justify-center">
-            <Building2 className="h-12 w-12 text-primary-600" />
+            <div className="relative">
+              <Building2 className="h-12 w-12 text-yellow-600" />
+              <div className="absolute -inset-1 bg-yellow-400 rounded-full opacity-20 blur-lg"></div>
+            </div>
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-3xl font-serif font-extrabold text-gray-900">
             Register Your Institute
           </h2>
           <p className="mt-2 text-sm text-gray-600">
@@ -255,7 +333,10 @@ const RegisterInstitute = () => {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6 bg-white p-8 rounded-lg shadow-lg" onSubmit={handleSubmit}>
+        <form
+          className="mt-8 space-y-6 bg-white/80 backdrop-blur-sm p-8 rounded-lg shadow-xl border-2 border-yellow-200"
+          onSubmit={handleSubmit}
+        >
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2 text-red-800">
               <AlertCircle className="h-5 w-5" />
@@ -264,10 +345,14 @@ const RegisterInstitute = () => {
           )}
 
           {message && (
-            <div className={`border rounded-lg p-4 flex items-center space-x-2 ${
-              message.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'
-            }`}>
-              {message.type === 'success' ? (
+            <div
+              className={`border rounded-lg p-4 flex items-center space-x-2 ${
+                message.type === "success"
+                  ? "bg-green-50 border-green-200 text-green-800"
+                  : "bg-red-50 border-red-200 text-red-800"
+              }`}
+            >
+              {message.type === "success" ? (
                 <CheckCircle className="h-5 w-5" />
               ) : (
                 <AlertCircle className="h-5 w-5" />
@@ -278,7 +363,10 @@ const RegisterInstitute = () => {
 
           {/* College Name */}
           <div>
-            <label htmlFor="collegeName" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="collegeName"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               College Name *
             </label>
             <input
@@ -295,7 +383,10 @@ const RegisterInstitute = () => {
 
           {/* College Unique ID */}
           <div>
-            <label htmlFor="collegeUniqueId" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="collegeUniqueId"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               College Unique ID *
             </label>
             <input
@@ -323,7 +414,9 @@ const RegisterInstitute = () => {
                 type="text"
                 value={programInput}
                 onChange={(e) => setProgramInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addProgram())}
+                onKeyPress={(e) =>
+                  e.key === "Enter" && (e.preventDefault(), addProgram())
+                }
                 className="input-field flex-1"
                 placeholder="Enter program name (e.g., Computer Science)"
               />
@@ -341,13 +434,13 @@ const RegisterInstitute = () => {
                 {formData.programsOffered.map((program, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary-100 text-primary-800"
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800 border border-yellow-200"
                   >
                     {program}
                     <button
                       type="button"
                       onClick={() => removeProgram(program)}
-                      className="ml-2 text-primary-600 hover:text-primary-800"
+                      className="ml-2 text-yellow-600 hover:text-yellow-800"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -356,7 +449,9 @@ const RegisterInstitute = () => {
               </div>
             )}
             {formData.programsOffered.length === 0 && (
-              <p className="text-xs text-gray-500 mt-1">Add at least one program</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Add at least one program
+              </p>
             )}
           </div>
 
@@ -365,11 +460,12 @@ const RegisterInstitute = () => {
             <div className="flex justify-between items-center mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <BookOpen className="h-5 w-5 mr-2 text-primary-600" />
+                  <BookOpen className="h-5 w-5 mr-2 text-yellow-600" />
                   Courses Offered *
                 </h3>
                 <p className="text-xs text-gray-500 mt-1">
-                  Minimum 3 courses required. You can add more from the dashboard later.
+                  Minimum 3 courses required. You can add more from the
+                  dashboard later.
                 </p>
               </div>
               <button
@@ -384,9 +480,14 @@ const RegisterInstitute = () => {
 
             <div className="space-y-4">
               {formData.courses.map((course, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div
+                  key={index}
+                  className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+                >
                   <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-medium text-gray-900">Course {index + 1}</h4>
+                    <h4 className="font-medium text-gray-900">
+                      Course {index + 1}
+                    </h4>
                     {formData.courses.length > 3 && (
                       <button
                         type="button"
@@ -454,26 +555,36 @@ const RegisterInstitute = () => {
                         disabled={loadingTeachers}
                       >
                         <option value="">
-                          {loadingTeachers ? 'Loading instructors...' : 'Select instructor (optional)'}
+                          {loadingTeachers
+                            ? "Loading instructors..."
+                            : "Select instructor (optional)"}
                         </option>
-                        {teachers.length > 0 ? (
-                          teachers.map((teacher) => (
-                            <option key={teacher.id} value={teacher.id}>
-                              {teacher.name} - {teacher.department || 'No Department'} {teacher.experience ? `(${teacher.experience} yrs exp)` : ''}
-                            </option>
-                          ))
-                        ) : !loadingTeachers && (
-                          <option value="">No instructors available (optional)</option>
-                        )}
+                        {teachers.length > 0
+                          ? teachers.map((teacher) => (
+                              <option key={teacher.id} value={teacher.id}>
+                                {teacher.name} -{" "}
+                                {teacher.department || "No Department"}{" "}
+                                {teacher.experience
+                                  ? `(${teacher.experience} yrs exp)`
+                                  : ""}
+                              </option>
+                            ))
+                          : !loadingTeachers && (
+                              <option value="">
+                                No instructors available (optional)
+                              </option>
+                            )}
                       </select>
                       {!loadingTeachers && teachers.length === 0 && (
                         <p className="text-xs text-gray-500 mt-1">
-                          No instructors available. You can assign an instructor later from the dashboard.
+                          No instructors available. You can assign an instructor
+                          later from the dashboard.
                         </p>
                       )}
                       {!loadingTeachers && teachers.length > 0 && (
                         <p className="text-xs text-gray-500 mt-1">
-                          Optionally select an instructor. Can be assigned later.
+                          Optionally select an instructor. Can be assigned
+                          later.
                         </p>
                       )}
                     </div>
@@ -502,13 +613,13 @@ const RegisterInstitute = () => {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary flex-1"
+              className="flex-1 px-8 py-3 bg-yellow-500 text-white font-bold rounded-lg hover:bg-yellow-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {loading ? 'Registering Institute...' : 'Register Institute'}
+              {loading ? "Registering Institute..." : "Register Institute"}
             </button>
             <button
               type="button"
-              onClick={() => navigate('/register')}
+              onClick={() => navigate("/register")}
               className="btn-secondary"
             >
               Back
@@ -521,4 +632,3 @@ const RegisterInstitute = () => {
 };
 
 export default RegisterInstitute;
-
