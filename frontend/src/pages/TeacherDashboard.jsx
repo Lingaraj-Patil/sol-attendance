@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { courseAPI, attendanceAPI, timetableAPI } from '../services/api';
-import { BookOpen, Users, CheckCircle, XCircle, ExternalLink, AlertCircle, Calendar, Clock } from 'lucide-react';
+import { BookOpen, Users, CheckCircle, XCircle, ExternalLink, AlertCircle, Calendar, Clock, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import TimetableDisplay from '../components/TimetableDisplay';
 
@@ -44,13 +44,42 @@ const TeacherDashboard = () => {
   const [showTimetableView, setShowTimetableView] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [todaySchedule, setTodaySchedule] = useState([]);
+  const [attendanceStats, setAttendanceStats] = useState(null);
+  const [bulkMarking, setBulkMarking] = useState(false);
+  const [selectedStudents, setSelectedStudents] = useState(new Set());
 
   // Load today's attendance for the selected course
   useEffect(() => {
     if (selectedCourse) {
       loadTodayAttendance();
+      loadAttendanceStats();
     }
   }, [selectedCourse]);
+
+  const loadAttendanceStats = async () => {
+    if (!selectedCourse) return;
+    
+    try {
+      const response = await attendanceAPI.getAll({
+        courseId: selectedCourse._id
+      });
+      
+      const records = response.data.data.attendance || [];
+      const total = records.length;
+      const present = records.filter(r => r.status === 'present').length;
+      const absent = total - present;
+      const percentage = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
+      
+      setAttendanceStats({
+        total,
+        present,
+        absent,
+        percentage
+      });
+    } catch (error) {
+      console.error('Load attendance stats error:', error);
+    }
+  };
 
   // Load timetable
   useEffect(() => {
@@ -152,6 +181,14 @@ const TeacherDashboard = () => {
       // Reload course data and today's attendance
       await loadCourses();
       await loadTodayAttendance();
+      await loadAttendanceStats();
+      
+      // Remove from bulk selection if selected
+      setSelectedStudents(prev => {
+        const next = new Set(prev);
+        next.delete(studentId);
+        return next;
+      });
     } catch (error) {
       setMessage({
         type: 'error',
@@ -164,6 +201,51 @@ const TeacherDashboard = () => {
 
   const handleQuickMark = (studentId, status) => {
     markAttendance(studentId, status, remarks[studentId] || '');
+  };
+
+  const handleBulkMark = async (status) => {
+    if (selectedStudents.size === 0) {
+      setMessage({ type: 'error', text: 'Please select at least one student' });
+      return;
+    }
+
+    setMarking(true);
+    setMessage(null);
+
+    try {
+      const promises = Array.from(selectedStudents).map(studentId =>
+        markAttendance(studentId, status, remarks[studentId] || '')
+      );
+
+      await Promise.all(promises);
+      
+      setMessage({
+        type: 'success',
+        text: `✅ Attendance marked for ${selectedStudents.size} student(s)`
+      });
+      
+      setSelectedStudents(new Set());
+      setBulkMarking(false);
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: 'Failed to mark attendance for some students'
+      });
+    } finally {
+      setMarking(false);
+    }
+  };
+
+  const toggleStudentSelection = (studentId) => {
+    setSelectedStudents(prev => {
+      const next = new Set(prev);
+      if (next.has(studentId)) {
+        next.delete(studentId);
+      } else {
+        next.add(studentId);
+      }
+      return next;
+    });
   };
 
   if (loading || !user) {
@@ -414,18 +496,74 @@ const TeacherDashboard = () => {
           {selectedCourse && (
             <div className="card">
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">{selectedCourse.name}</h2>
-                <p className="text-gray-600">{selectedCourse.code}</p>
-                <div className="mt-2 flex items-center space-x-4 text-sm">
-                  <span className="text-gray-600">
-                    Priority: <span className="font-semibold">{selectedCourse.priority}</span>
-                  </span>
-                  <span className="text-gray-600">
-                    Reward Tokens: <span className="font-semibold">
-                      {selectedCourse.tokensPerAttendance * (selectedCourse.priority || 1)}
-                    </span>
-                  </span>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">{selectedCourse.name}</h2>
+                    <p className="text-gray-600">{selectedCourse.code}</p>
+                    <div className="mt-2 flex items-center space-x-4 text-sm">
+                      <span className="text-gray-600">
+                        Priority: <span className="font-semibold">{selectedCourse.priority}</span>
+                      </span>
+                      <span className="text-gray-600">
+                        Reward Tokens: <span className="font-semibold">
+                          {selectedCourse.tokensPerAttendance * (selectedCourse.priority || 1)}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setBulkMarking(!bulkMarking)}
+                      className={`px-4 py-2 rounded-lg text-sm ${
+                        bulkMarking
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {bulkMarking ? 'Cancel Bulk' : 'Bulk Mark'}
+                    </button>
+                    {bulkMarking && selectedStudents.size > 0 && (
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleBulkMark('present')}
+                          disabled={marking}
+                          className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 disabled:opacity-50"
+                        >
+                          Mark {selectedStudents.size} Present
+                        </button>
+                        <button
+                          onClick={() => handleBulkMark('absent')}
+                          disabled={marking}
+                          className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 disabled:opacity-50"
+                        >
+                          Mark {selectedStudents.size} Absent
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Attendance Statistics */}
+                {attendanceStats && (
+                  <div className="grid grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">Total Classes</p>
+                      <p className="text-2xl font-bold text-gray-900">{attendanceStats.total}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">Present</p>
+                      <p className="text-2xl font-bold text-green-600">{attendanceStats.present}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">Absent</p>
+                      <p className="text-2xl font-bold text-red-600">{attendanceStats.absent}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">Attendance %</p>
+                      <p className="text-2xl font-bold text-primary-600">{attendanceStats.percentage}%</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {selectedCourse.students && selectedCourse.students.length > 0 ? (
@@ -444,8 +582,19 @@ const TeacherDashboard = () => {
                               ? 'bg-green-50 border-green-300'
                               : 'bg-red-50 border-red-300'
                             : 'bg-gray-50 border-gray-200'
-                        }`}
+                        } ${bulkMarking && selectedStudents.has(student._id) ? 'ring-2 ring-primary-500' : ''}`}
                       >
+                        {bulkMarking && !isMarked && (
+                          <div className="mb-2">
+                            <input
+                              type="checkbox"
+                              checked={selectedStudents.has(student._id)}
+                              onChange={() => toggleStudentSelection(student._id)}
+                              className="h-4 w-4 text-primary-600 rounded"
+                            />
+                            <span className="ml-2 text-sm text-gray-600">Select for bulk marking</span>
+                          </div>
+                        )}
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-1">

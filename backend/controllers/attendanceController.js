@@ -27,7 +27,7 @@ export const markAttendance = async (req, res) => {
       });
     }
 
-    // Get course and verify teacher
+    // Get course and verify teacher (check both teacher and instructor fields)
     const course = await Course.findById(courseId);
     if (!course) {
       return res.status(404).json({
@@ -36,10 +36,15 @@ export const markAttendance = async (req, res) => {
       });
     }
 
-    if (course.teacher.toString() !== teacherId.toString()) {
+    // Check if teacher is assigned to this course (via teacher or instructor field)
+    const isAuthorized = 
+      (course.teacher && course.teacher.toString() === teacherId.toString()) ||
+      (course.instructor && course.instructor.toString() === teacherId.toString());
+
+    if (!isAuthorized) {
       return res.status(403).json({
         success: false,
-        message: 'You are not authorized to mark attendance for this course'
+        message: 'You are not authorized to mark attendance for this course. You must be assigned as the teacher or instructor.'
       });
     }
 

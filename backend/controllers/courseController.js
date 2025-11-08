@@ -111,8 +111,12 @@ export const getCourses = async (req, res) => {
     
     let query = { isActive: true };
     
+    // Support both teacher and instructor fields
     if (teacherId) {
-      query.teacher = teacherId;
+      query.$or = [
+        { teacher: teacherId },
+        { instructor: teacherId }
+      ];
     }
     
     if (studentId) {
@@ -121,6 +125,7 @@ export const getCourses = async (req, res) => {
 
     const courses = await Course.find(query)
       .populate('teacher', 'name email')
+      .populate('instructor', 'name email')
       .populate('students', 'name email walletAddress')
       .sort('-createdAt');
 
@@ -233,7 +238,7 @@ export const enrollStudent = async (req, res) => {
 // Update course
 export const updateCourse = async (req, res) => {
   try {
-    const { name, description, priority, tokensPerAttendance } = req.body;
+    const { name, description, priority, tokensPerAttendance, teacherId, instructorId } = req.body;
 
     const course = await Course.findById(req.params.id);
     
@@ -249,9 +254,39 @@ export const updateCourse = async (req, res) => {
     if (description) course.description = description;
     if (priority) course.priority = priority;
     if (tokensPerAttendance) course.tokensPerAttendance = tokensPerAttendance;
+    
+    // Update teacher assignment (supports both teacher and instructor fields)
+    if (teacherId) {
+      // Validate teacher exists
+      const teacher = await User.findById(teacherId);
+      if (!teacher || teacher.role !== 'teacher') {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid teacher ID'
+        });
+      }
+      course.teacher = teacherId;
+      // Also update instructor if not explicitly set
+      if (!instructorId) {
+        course.instructor = teacherId;
+      }
+    }
+    
+    if (instructorId) {
+      // Validate instructor exists
+      const instructor = await User.findById(instructorId);
+      if (!instructor || instructor.role !== 'teacher') {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid instructor ID'
+        });
+      }
+      course.instructor = instructorId;
+    }
 
     await course.save();
     await course.populate('teacher', 'name email');
+    await course.populate('instructor', 'name email');
 
     res.json({
       success: true,
@@ -263,6 +298,60 @@ export const updateCourse = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error updating course',
+      error: error.message
+    });
+  }
+};
+
+// Assign teacher to course
+export const assignTeacher = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { teacherId } = req.body;
+
+    if (!teacherId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Teacher ID is required'
+      });
+    }
+
+    // Validate teacher exists
+    const teacher = await User.findById(teacherId);
+    if (!teacher || teacher.role !== 'teacher') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid teacher ID'
+      });
+    }
+
+    // Get course
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found'
+      });
+    }
+
+    // Assign teacher (update both teacher and instructor fields)
+    course.teacher = teacherId;
+    course.instructor = teacherId;
+    await course.save();
+
+    await course.populate('teacher', 'name email');
+    await course.populate('instructor', 'name email');
+
+    res.json({
+      success: true,
+      message: 'Teacher assigned to course successfully',
+      data: { course }
+    });
+  } catch (error) {
+    console.error('Assign teacher error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error assigning teacher',
       error: error.message
     });
   }

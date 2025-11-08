@@ -17,6 +17,7 @@ import {
   submitStudentFeedback,
   selectStudentCourses,
   getStudentSelectedCourses,
+  getAllStudentsMALS,
   // Teacher
   registerTeacherMALS,
   loginTeacherMALS,
@@ -40,6 +41,7 @@ router.get('/admin/feedbacks/list', authenticate, authorize('admin'), getStudent
 // ============= STUDENT ROUTES =============
 router.post('/students/register', registerStudentMALS);
 router.post('/students/login', loginStudentMALS);
+router.get('/students', getAllStudentsMALS); // Get all students (for admin use)
 // Student routes - allow any authenticated user to access their own profile
 router.get('/students/:studentId', authenticate, getStudentProfileMALS);
 router.patch('/students/:studentId', authenticate, updateStudentProfileMALS);

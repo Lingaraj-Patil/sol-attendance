@@ -1407,3 +1407,58 @@ export const getAllTeachersMALS = async (req, res) => {
   }
 };
 
+// Get all students (for admin use)
+export const getAllStudentsMALS = async (req, res) => {
+  try {
+    const { adminId, collegeUniqueId } = req.query;
+    
+    let query = { role: 'student', isActive: true };
+    
+    // If adminId or collegeUniqueId is provided, filter students by college
+    if (adminId || collegeUniqueId) {
+      let targetCollegeId = collegeUniqueId;
+      
+      if (adminId && !collegeUniqueId) {
+        const admin = await User.findById(adminId).select('college.collegeUniqueId');
+        if (admin && admin.college && admin.college.collegeUniqueId) {
+          targetCollegeId = admin.college.collegeUniqueId;
+        }
+      }
+      
+      if (targetCollegeId) {
+        query.collegeUniqueId = targetCollegeId;
+      }
+    }
+
+    const students = await User.find(query)
+      .select('-password')
+      .sort({ name: 1 })
+      .populate('enrolledCourses', 'name code');
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        students: students.map(student => ({
+          _id: student._id,
+          id: student._id,
+          name: student.name,
+          email: student.email,
+          walletAddress: student.walletAddress,
+          tokenBalance: student.tokenBalance,
+          Program: student.Program,
+          age: student.age,
+          gender: student.gender,
+          enrolledCourses: student.enrolledCourses || []
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching all students:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch students',
+      error: error.message
+    });
+  }
+};
+

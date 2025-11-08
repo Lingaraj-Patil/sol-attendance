@@ -4,6 +4,7 @@ import { Coins, BookOpen, Plus, CheckCircle, AlertCircle, History, ExternalLink,
 import { format } from 'date-fns';
 import TokenTransferForm from '../components/TokenTransferForm';
 import TimetableGenerator from '../components/TimetableGenerator';
+import CourseAssignment from '../components/CourseAssignment';
 import { malsTeacherAPI } from '../services/api';
 
 const AdminDashboard = () => {
@@ -19,6 +20,8 @@ const AdminDashboard = () => {
   const [showProductForm, setShowProductForm] = useState(false);
   const [showTimetableForm, setShowTimetableForm] = useState(false);
   const [message, setMessage] = useState(null);
+  const [showTeacherAssignModal, setShowTeacherAssignModal] = useState(false);
+  const [selectedCourseForAssignment, setSelectedCourseForAssignment] = useState(null);
 
   const [tokenForm, setTokenForm] = useState({
     name: '',
@@ -147,6 +150,40 @@ const AdminDashboard = () => {
       setMessage({ 
         type: 'error', 
         text: error.response?.data?.message || 'Failed to create product' 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAssignTeacher = (courseId) => {
+    const course = courses.find(c => c._id === courseId);
+    setSelectedCourseForAssignment(course);
+    setShowTeacherAssignModal(true);
+  };
+
+  const handleConfirmTeacherAssignment = async (teacherId) => {
+    if (!selectedCourseForAssignment || !teacherId) {
+      setMessage({ type: 'error', text: 'Please select a teacher' });
+      return;
+    }
+
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      await courseAPI.assignTeacher(selectedCourseForAssignment._id, teacherId);
+      setMessage({ 
+        type: 'success', 
+        text: 'Teacher assigned to course successfully!' 
+      });
+      setShowTeacherAssignModal(false);
+      setSelectedCourseForAssignment(null);
+      await loadData();
+    } catch (error) {
+      setMessage({ 
+        type: 'error', 
+        text: error.response?.data?.message || 'Failed to assign teacher' 
       });
     } finally {
       setLoading(false);
@@ -560,28 +597,14 @@ const AdminDashboard = () => {
           </h2>
           <div className="flex space-x-2">
             <button
-              onClick={async () => {
-                try {
-                  setLoading(true);
-                  setMessage(null);
-                  const response = await timetableAPI.autoGenerate({
-                    name: `Auto-Generated ${new Date().toLocaleDateString()}`,
-                    semester: 'Fall 2024',
-                    academicYear: '2024-2025',
-                    timeLimit: 30
-                  });
-                  if (response.data.success) {
-                    setMessage({ type: 'success', text: 'Timetable auto-generated from user availability!' });
-                    await loadData();
-                  }
-                } catch (error) {
-                  setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to auto-generate timetable' });
-                } finally {
-                  setLoading(false);
-                }
+              onClick={() => {
+                window.open(
+                  'https://suparnnayak-time-table-streamlit-app-7lfo4g.streamlit.app/',
+                  '_blank',
+                  'noopener,noreferrer'
+                );
               }}
               className="btn-primary flex items-center space-x-2"
-              disabled={loading}
             >
               <Calendar className="h-5 w-5" />
               <span>Auto-Generate from User Data</span>
@@ -593,6 +616,15 @@ const AdminDashboard = () => {
               <Plus className="h-5 w-5" />
               <span>Manual Generate</span>
             </button>
+            <a
+              href="https://suparnnayak-time-table-streamlit-app-7lfo4g.streamlit.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary flex items-center space-x-2"
+            >
+              <ExternalLink className="h-5 w-5" />
+              <span>Open Streamlit Tool</span>
+            </a>
           </div>
         </div>
 
@@ -666,14 +698,19 @@ const AdminDashboard = () => {
                 className="input-field"
                 required
               />
-              <input
-                type="text"
-                placeholder="Teacher ID"
+              <select
                 value={courseForm.teacherId}
                 onChange={(e) => setCourseForm({ ...courseForm, teacherId: e.target.value })}
                 className="input-field"
                 required
-              />
+              >
+                <option value="">Select Teacher</option>
+                {teachers.map((teacher) => (
+                  <option key={teacher._id || teacher.id} value={teacher._id || teacher.id}>
+                    {teacher.name || teacher.username} {teacher.email ? `(${teacher.email})` : ''}
+                  </option>
+                ))}
+              </select>
               <input
                 type="number"
                 placeholder="Priority (1-5)"
@@ -718,15 +755,50 @@ const AdminDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {courses.map((course) => (
               <div key={course._id} className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900">{course.name}</h3>
-                <p className="text-sm text-gray-600">Code: {course.code}</p>
-                <p className="text-sm text-gray-600">Priority: {course.priority}</p>
-                <p className="text-sm text-gray-600">
-                  Teacher: {course.teacher?.name || 'N/A'}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Students: {course.students?.length || 0}
-                </p>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900">{course.name}</h3>
+                    <p className="text-sm text-gray-600">Code: {course.code}</p>
+                    <p className="text-sm text-gray-600">Priority: {course.priority}</p>
+                    <p className="text-sm text-gray-600">
+                      Teacher: {course.teacher?.name || course.instructor?.name || 'Not Assigned'}
+                    </p>
+                    {course.teacher?.email && (
+                      <p className="text-xs text-gray-500">{course.teacher.email}</p>
+                    )}
+                    <p className="text-sm text-gray-600 mt-2">
+                      Students: {course.students?.length || 0}
+                    </p>
+                    {course.students && course.students.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs text-gray-500 mb-1">Enrolled Students:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {course.students.slice(0, 3).map((student) => (
+                            <span
+                              key={student._id || student}
+                              className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded"
+                            >
+                              {student.name || student.email || 'Student'}
+                            </span>
+                          ))}
+                          {course.students.length > 3 && (
+                            <span className="text-xs text-gray-500">
+                              +{course.students.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="ml-4 flex flex-col space-y-2">
+                    <button
+                      onClick={() => handleAssignTeacher(course._id)}
+                      className="px-3 py-1 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                    >
+                      {course.teacher || course.instructor ? 'Reassign' : 'Assign'} Teacher
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -734,6 +806,94 @@ const AdminDashboard = () => {
           <p className="text-gray-500 text-center py-4">No courses created yet</p>
         )}
       </div>
+
+      {/* Student Course Assignment Section */}
+      <div className="mt-8">
+        <CourseAssignment onSuccess={loadData} />
+      </div>
+
+      {/* Teacher Assignment Modal */}
+      {showTeacherAssignModal && selectedCourseForAssignment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              Assign Teacher to {selectedCourseForAssignment.name}
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Select a teacher to mark attendance for students in this course.
+            </p>
+            
+            {teachers.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No teachers available. Please register teachers first.</p>
+                <button
+                  onClick={() => setShowTeacherAssignModal(false)}
+                  className="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto mb-4">
+                {teachers.map((teacher) => {
+                  const teacherId = teacher._id || teacher.id;
+                  const isCurrentlyAssigned = 
+                    selectedCourseForAssignment?.teacher?._id === teacherId ||
+                    selectedCourseForAssignment?.teacher === teacherId ||
+                    selectedCourseForAssignment?.instructor?._id === teacherId ||
+                    selectedCourseForAssignment?.instructor === teacherId;
+                  
+                  return (
+                    <button
+                      key={teacherId}
+                      onClick={() => handleConfirmTeacherAssignment(teacherId)}
+                      disabled={loading}
+                      className={`w-full text-left p-3 border-2 rounded-lg transition-colors disabled:opacity-50 ${
+                        isCurrentlyAssigned
+                          ? 'bg-primary-50 border-primary-500'
+                          : 'border-gray-200 hover:bg-gray-50 hover:border-primary-500'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">
+                            {teacher.name || teacher.username}
+                            {isCurrentlyAssigned && (
+                              <span className="ml-2 text-xs bg-primary-600 text-white px-2 py-0.5 rounded">
+                                Currently Assigned
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-sm text-gray-600">{teacher.email}</p>
+                          {teacher.department && (
+                            <p className="text-xs text-gray-500">Department: {teacher.department}</p>
+                          )}
+                          {teacher.experience !== undefined && (
+                            <p className="text-xs text-gray-500">Experience: {teacher.experience} years</p>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => {
+                  setShowTeacherAssignModal(false);
+                  setSelectedCourseForAssignment(null);
+                }}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -5,7 +5,8 @@ import {
   getCourse,
   enrollStudent,
   updateCourse,
-  getCoursesByCollege
+  getCoursesByCollege,
+  assignTeacher
 } from '../controllers/courseController.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
@@ -21,6 +22,7 @@ router.use(authenticate);
 router.post('/', authorize('admin'), createCourse);
 router.post('/enroll', authorize('admin'), enrollStudent);
 router.put('/:id', authorize('admin'), updateCourse);
+router.post('/:courseId/assign-teacher', authorize('admin'), assignTeacher);
 
 // All authenticated users
 router.get('/', getCourses);

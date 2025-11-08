@@ -1,18 +1,28 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Coins, Mail, Lock, AlertCircle } from 'lucide-react';
 
 const Login = () => {
+  const [searchParams] = useSearchParams();
+  const roleParam = searchParams.get('role');
+  
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
+    role: roleParam || ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
   const { login, updateUser } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (roleParam) {
+      setFormData(prev => ({ ...prev, role: roleParam }));
+    }
+  }, [roleParam]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -32,7 +42,9 @@ const Login = () => {
 
     try {
       // Use only the unified login endpoint - it handles all user types and formats
+      console.log('🔐 Login attempt starting...', { email: formData.email });
       const result = await login(formData.email, formData.password);
+      console.log('🔐 Login result:', result);
       
       if (result.success) {
         // Clear any old auth data first
@@ -42,23 +54,36 @@ const Login = () => {
         localStorage.removeItem('studentInfo');
         
         setLoading(false);
+        console.log('✅ Login successful, navigating to dashboard');
         navigate('/dashboard');
         return;
       } else {
         // Login returned false
-        setError(result.message || 'Invalid email/username or password. Please check your credentials.');
-        console.log('Unified login failed:', result.message);
+        const errorMsg = result.message || 'Invalid email/username or password. Please check your credentials.';
+        setError(errorMsg);
+        console.error('❌ Unified login failed:', result.message);
       }
     } catch (loginError) {
       // Unified login threw an error
-      const errorMessage = loginError?.response?.data?.message || 
-                          loginError?.message || 
-                          'Invalid email/username or password. Please check your credentials.';
+      console.error('❌ Login exception:', loginError);
+      let errorMessage = 'Invalid email/username or password. Please check your credentials.';
+      
+      // Check for network errors
+      if (loginError.code === 'ERR_NETWORK' || loginError.message?.includes('Network Error')) {
+        errorMessage = 'Cannot connect to server. Please make sure the backend server is running on port 5001.';
+      } else if (loginError.response) {
+        errorMessage = loginError.response?.data?.message || errorMessage;
+      } else if (loginError.message) {
+        errorMessage = loginError.message;
+      }
+      
       setError(errorMessage);
-      console.error('Login error:', {
+      console.error('Login error details:', {
         response: loginError?.response?.data,
         message: loginError?.message,
-        status: loginError?.response?.status
+        status: loginError?.response?.status,
+        statusText: loginError?.response?.statusText,
+        code: loginError?.code
       });
     }
 
@@ -76,8 +101,13 @@ const Login = () => {
             Solana Attendance System
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Sign in to your account
+            {roleParam ? `Sign in as ${roleParam.charAt(0).toUpperCase() + roleParam.slice(1)}` : 'Sign in to your account'}
           </p>
+          {roleParam && (
+            <div className="mt-2 inline-block px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-xs font-medium">
+              {roleParam === 'admin' ? 'Admin Login' : roleParam === 'student' ? 'Student Login' : 'Teacher Login'}
+            </div>
+          )}
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

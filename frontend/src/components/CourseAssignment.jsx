@@ -18,10 +18,22 @@ const CourseAssignment = ({ onSuccess }) => {
     try {
       const [coursesRes, studentsRes] = await Promise.all([
         courseAPI.getAll(),
-        tokenAPI.getStudents()
+        tokenAPI.getStudents().catch(() => ({ data: { data: { students: [] } } }))
       ]);
       setCourses(coursesRes.data.data.courses);
-      setStudents(studentsRes.data.data.students || []);
+      // Try to get all students from MALS API if available, fallback to token students
+      try {
+        const { malsStudentAPI } = await import('../services/api');
+        const allStudentsRes = await malsStudentAPI.getAll();
+        if (allStudentsRes.data.data.students && allStudentsRes.data.data.students.length > 0) {
+          setStudents(allStudentsRes.data.data.students);
+        } else {
+          setStudents(studentsRes.data.data.students || []);
+        }
+      } catch (malsError) {
+        // Fallback to token students (students with wallets)
+        setStudents(studentsRes.data.data.students || []);
+      }
     } catch (error) {
       console.error('Load data error:', error);
     }

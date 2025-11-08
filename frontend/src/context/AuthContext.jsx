@@ -77,18 +77,39 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('🔐 Attempting login with:', { email, hasPassword: !!password });
       const response = await authAPI.login({ email, password });
-      const { user, token } = response.data.data;
+      console.log('✅ Login response received:', response.data);
+      
+      // Handle different response structures
+      const responseData = response.data?.data || response.data;
+      const user = responseData?.user || responseData?.admin || responseData?.student || responseData?.teacher;
+      const token = responseData?.token || response.data?.token;
+      
+      if (!user || !token) {
+        console.error('❌ Login response missing user or token:', response.data);
+        return {
+          success: false,
+          message: 'Invalid response from server'
+        };
+      }
       
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
       
+      console.log('✅ Login successful, user set:', user.email);
       return { success: true };
     } catch (error) {
+      console.error('❌ Login error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
       return {
         success: false,
-        message: error.response?.data?.message || 'Login failed'
+        message: error.response?.data?.message || error.message || 'Login failed. Please check your credentials.'
       };
     }
   };

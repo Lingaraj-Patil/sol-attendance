@@ -75,6 +75,7 @@ export const courseAPI = {
   getOne: (id) => api.get(`/courses/${id}`),
   update: (id, data) => api.put(`/courses/${id}`, data),
   enroll: (data) => api.post('/courses/enroll', data),
+  assignTeacher: (courseId, teacherId) => api.post(`/courses/${courseId}/assign-teacher`, { teacherId }),
   getByCollege: (collegeUniqueId) => api.get(`/courses/college/${collegeUniqueId}`) // Public endpoint
 };
 
@@ -112,6 +113,7 @@ export const malsAdminAPI = {
 export const malsStudentAPI = {
   register: (data) => api.post('/mals/students/register', data),
   login: (data) => api.post('/mals/students/login', data),
+  getAll: (params) => api.get('/mals/students', { params }), // Get all students (for admin)
   getProfile: (studentId) => api.get(`/mals/students/${studentId}`),
   updateProfile: (studentId, data) => api.patch(`/mals/students/${studentId}`, data),
   submitFeedback: (studentId, data) => api.post(`/mals/students/${studentId}/feedback`, data),
@@ -132,7 +134,7 @@ export const malsTeacherAPI = {
 };
 
 // Timetable API
-const TIMETABLE_API_URL = 'https://timetable-generator-3-iadp.onrender.com';
+const TIMETABLE_API_URL = 'https://timetable-generator-4.onrender.com';
 
 export const timetableAPI = {
   // External API calls
