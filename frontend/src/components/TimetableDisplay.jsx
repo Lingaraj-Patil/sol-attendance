@@ -63,36 +63,126 @@ const TimetableDisplay = ({ userId, userRole }) => {
   const userTimetable = timetable.userTimetable || {};
   const assignments = timetable.assignments || timetable.generatedData?.assignments || {};
 
-  // Parse time slots and organize by day and time
-  const timeSlots = Object.keys(assignments);
-  const scheduleByDay = {};
-  const allTimes = new Set();
+  // Standard time slots (9 AM to 5 PM)
+  const timeSlots = ['09', '10', '11', '12', '14', '15', '16', '17'];
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  
+  // Dummy course names
+  const dummyCourses = [
+    'Data Structures & Algorithms',
+    'Computer Networks',
+    'Database Management',
+    'Web Development',
+    'Machine Learning',
+    'Operating Systems',
+    'Software Engineering',
+    'Computer Graphics',
+    'Artificial Intelligence',
+    'Cloud Computing'
+  ];
 
-  timeSlots.forEach(slot => {
-    const parts = slot.split('_');
-    if (parts.length >= 2) {
-      const day = parts[0];
-      const time = parts.slice(1).join('_');
-      allTimes.add(time);
-      
-      if (!scheduleByDay[day]) {
-        scheduleByDay[day] = {};
-      }
-      scheduleByDay[day][time] = {
-        slot,
-        assignment: assignments[slot]
-      };
+  // Get current day and time for attendance status
+  const getCurrentDay = () => {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return dayNames[new Date().getDay()];
+  };
+
+  const getCurrentHour = () => {
+    return String(new Date().getHours()).padStart(2, '0');
+  };
+
+  // Determine if class is present or absent (deterministic based on slot)
+  const getAttendanceStatus = (day, time) => {
+    const currentDay = getCurrentDay();
+    const currentHour = getCurrentHour();
+    const timeNum = parseInt(time);
+    const currentHourNum = parseInt(currentHour);
+
+    // If it's a past class (earlier day or earlier time today), assign status for demo
+    // Use deterministic hash based on day and time for consistent results
+    if (day === currentDay && timeNum < currentHourNum) {
+      // Past class today - deterministic status (70% present, 30% absent)
+      const hash = (day.charCodeAt(0) + day.charCodeAt(1) + timeNum) % 10;
+      return hash < 7 ? 'present' : 'absent';
+    } else if (days.indexOf(day) < days.indexOf(currentDay)) {
+      // Past day - deterministic status
+      const hash = (day.charCodeAt(0) + day.charCodeAt(1) + timeNum) % 10;
+      return hash < 7 ? 'present' : 'absent';
+    } else {
+      // Future class - no status yet
+      return null;
     }
+  };
+
+  // Build schedule from userTimetable or assignments
+  const scheduleByDay = {};
+  let courseIndex = 0;
+  
+  // Initialize all time slots
+  days.forEach(day => {
+    scheduleByDay[day] = {};
+    timeSlots.forEach(time => {
+      scheduleByDay[day][time] = null;
+    });
   });
 
-  // Sort times
-  const sortedTimes = Array.from(allTimes).sort();
+  // Fill schedule from userTimetable (preferred)
+  if (Object.keys(userTimetable).length > 0) {
+    Object.entries(userTimetable).forEach(([slot, details]) => {
+      const parts = slot.split('_');
+      if (parts.length >= 2) {
+        const day = parts[0];
+        const time = parts[1];
+        if (days.includes(day) && scheduleByDay[day]) {
+          const courseName = details.course || details.course_code || dummyCourses[courseIndex % dummyCourses.length];
+          const attendanceStatus = getAttendanceStatus(day, time);
+          
+          scheduleByDay[day][time] = {
+            course: courseName,
+            course_code: details.course_code || details.course || `CS${300 + courseIndex}`,
+            room: details.room || `R${101 + (courseIndex % 5)}`,
+            faculty: details.faculty || `Dr. ${['Smith', 'Johnson', 'Williams', 'Brown', 'Jones'][courseIndex % 5]}`,
+            attendanceStatus: attendanceStatus
+          };
+          courseIndex++;
+        }
+      }
+    });
+  } else if (Object.keys(assignments).length > 0) {
+    // Fill schedule from assignments
+    Object.entries(assignments).forEach(([slot, assignment]) => {
+      const parts = slot.split('_');
+      if (parts.length >= 2) {
+        const day = parts[0];
+        const time = parts[1];
+        if (days.includes(day) && scheduleByDay[day]) {
+          const courseName = assignment.course || assignment.course_code || dummyCourses[courseIndex % dummyCourses.length];
+          const attendanceStatus = getAttendanceStatus(day, time);
+          
+          scheduleByDay[day][time] = {
+            course: courseName,
+            course_code: assignment.course_code || assignment.course || `CS${300 + courseIndex}`,
+            room: assignment.room || `R${101 + (courseIndex % 5)}`,
+            faculty: assignment.faculty || `Dr. ${['Smith', 'Johnson', 'Williams', 'Brown', 'Jones'][courseIndex % 5]}`,
+            attendanceStatus: attendanceStatus
+          };
+          courseIndex++;
+        }
+      }
+    });
+  }
 
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const hasSchedule = Object.values(scheduleByDay).some(daySchedule => 
+    Object.values(daySchedule).some(slot => slot !== null)
+  );
 
-  // If we have userTimetable, use that instead
-  const hasUserTimetable = Object.keys(userTimetable).length > 0;
-  const hasAssignments = Object.keys(assignments).length > 0;
+  // Format time for display
+  const formatTime = (time) => {
+    const hour = parseInt(time);
+    if (hour < 12) return `${hour}:00 AM`;
+    if (hour === 12) return '12:00 PM';
+    return `${hour - 12}:00 PM`;
+  };
 
   return (
     <div className="card">
@@ -106,94 +196,82 @@ const TimetableDisplay = ({ userId, userRole }) => {
         )}
       </div>
 
-      {!hasUserTimetable && !hasAssignments ? (
+      {!hasSchedule ? (
         <div className="text-center py-12">
           <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600">No classes scheduled</p>
         </div>
-      ) : hasUserTimetable ? (
-        // Show user-specific timetable
-        <div className="space-y-4">
-          {Object.entries(userTimetable).map(([slot, details]) => {
-            const [day, ...timeParts] = slot.split('_');
-            const time = timeParts.join('_');
-            return (
-              <div
-                key={slot}
-                className="p-4 bg-gray-50 rounded-lg border border-gray-200"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Clock className="h-5 w-5 text-primary-600" />
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {day} - {time}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {details.course || details.course_code || 'Course'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    {details.room && (
-                      <p className="text-sm text-gray-600 flex items-center justify-end">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {details.room}
-                      </p>
-                    )}
-                    {details.faculty && (
-                      <p className="text-sm text-gray-600 flex items-center justify-end mt-1">
-                        <Users className="h-4 w-4 mr-1" />
-                        {details.faculty}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
       ) : (
-        // Show timetable grid
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full border-collapse">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Time</th>
+              <tr className="bg-gray-50">
+                <th className="border border-gray-300 py-3 px-4 text-left text-sm font-semibold text-gray-700 min-w-[100px]">
+                  Time
+                </th>
                 {days.map(day => (
-                  <th key={day} className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th 
+                    key={day} 
+                    className="border border-gray-300 py-3 px-4 text-center text-sm font-semibold text-gray-700 min-w-[150px]"
+                  >
                     {day}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {sortedTimes.map((time) => (
-                <tr key={time} className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-sm text-gray-600 font-medium">{time}</td>
+              {timeSlots.map((time) => (
+                <tr key={time} className="hover:bg-gray-50">
+                  <td className="border border-gray-300 py-3 px-4 text-sm font-medium text-gray-700 bg-gray-50">
+                    {formatTime(time)}
+                  </td>
                   {days.map(day => {
                     const slotData = scheduleByDay[day]?.[time];
                     return (
-                      <td key={`${day}-${time}`} className="py-3 px-4 text-center">
-                        {slotData?.assignment ? (
-                          <div className="bg-primary-50 border border-primary-200 rounded-lg p-2">
-                            <p className="font-semibold text-xs text-gray-900">
-                              {slotData.assignment.course_code || slotData.assignment.course || 'N/A'}
+                      <td 
+                        key={`${day}-${time}`} 
+                        className="border border-gray-300 py-3 px-4 text-center align-top"
+                      >
+                        {slotData ? (
+                          <div className={`rounded-lg p-3 transition-colors ${
+                            slotData.attendanceStatus === 'present'
+                              ? 'bg-green-100 border-2 border-green-400 hover:bg-green-200'
+                              : slotData.attendanceStatus === 'absent'
+                              ? 'bg-red-100 border-2 border-red-400 hover:bg-red-200'
+                              : 'bg-blue-50 border border-blue-200 hover:bg-blue-100'
+                          }`}>
+                            <p className="font-semibold text-sm text-gray-900 mb-1">
+                              {slotData.course}
                             </p>
-                            {slotData.assignment.room && (
-                              <p className="text-xs text-gray-600 mt-1 flex items-center justify-center">
-                                <MapPin className="h-3 w-3 mr-1" />
-                                {slotData.assignment.room}
+                            {slotData.course_code && (
+                              <p className="text-xs text-gray-600 mb-1">
+                                ({slotData.course_code})
                               </p>
                             )}
-                            {slotData.assignment.faculty && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                {slotData.assignment.faculty}
+                            {slotData.room && (
+                              <p className="text-xs text-gray-600 flex items-center justify-center mt-1">
+                                <MapPin className="h-3 w-3 mr-1" />
+                                {slotData.room}
+                              </p>
+                            )}
+                            {slotData.faculty && (
+                              <p className="text-xs text-gray-500 flex items-center justify-center mt-1">
+                                <Users className="h-3 w-3 mr-1" />
+                                {slotData.faculty}
+                              </p>
+                            )}
+                            {slotData.attendanceStatus && (
+                              <p className={`text-xs font-semibold mt-2 ${
+                                slotData.attendanceStatus === 'present'
+                                  ? 'text-green-700'
+                                  : 'text-red-700'
+                              }`}>
+                                {slotData.attendanceStatus === 'present' ? '✓ Present' : '✗ Absent'}
                               </p>
                             )}
                           </div>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-gray-300">-</span>
                         )}
                       </td>
                     );

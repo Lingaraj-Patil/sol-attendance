@@ -145,6 +145,7 @@ export const timetableAPI = {
   // Internal API calls (for storing/retrieving timetables)
   save: (data) => api.post('/timetables', data),
   autoGenerate: (data) => api.post('/timetables/auto-generate', data),
+  generateDummy: () => api.post('/timetables/generate-dummy'),
   getAll: (params) => api.get('/timetables', { params }),
   getOne: (id) => api.get(`/timetables/${id}`),
   update: (id, data) => api.put(`/timetables/${id}`, data),

@@ -8,7 +8,8 @@ import {
   getTimetable,
   getUserTimetable,
   updateTimetable,
-  deleteTimetable
+  deleteTimetable,
+  generateDummyTimetable
 } from '../controllers/timetableController.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
@@ -16,6 +17,9 @@ const router = express.Router();
 
 // Auto-generate timetable from user data (Admin only)
 router.post('/auto-generate', authenticate, authorize('admin'), autoGenerateTimetable);
+
+// Generate dummy timetable data (Admin only)
+router.post('/generate-dummy', authenticate, authorize('admin'), generateDummyTimetable);
 
 // Generate timetable manually (Admin only)
 router.post('/', authenticate, authorize('admin'), generateTimetable);
